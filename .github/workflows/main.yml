@@ -8,6 +8,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   # ── CI: Verificación de archivos requeridos ──────────────────────────────────
   ci:
@@ -36,11 +41,16 @@ jobs:
             exit 1
           fi
 
-  # ── CD: Simulación de despliegue a Staging ───────────────────────────────────
+  # ── CD: Preparar artefactos y desplegar en GitHub Pages ──────────────────────
   cd:
     name: Despliegue Continuo
     runs-on: ubuntu-latest
     needs: ci
+    if: github.ref == 'refs/heads/main'
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout del repositorio
@@ -52,9 +62,18 @@ jobs:
           cp home.html styles.css dist/
           cp login.html dist/ 2>/dev/null || true
           cp listadoUsuarios.html dist/ 2>/dev/null || true
+          echo "Artefactos listos para el despliegue en el entorno de Staging"
           echo "Archivos en dist/:"
           ls dist/
 
-      - name: Simulación de despliegue
-        run: |
-          echo "Artefactos listos para el despliegue en el entorno de Staging"
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Subir artefactos a Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
