@@ -1,0 +1,4 @@
+claves_ssh_gpg.txt
+*.pem
+*_ssh_key
+*_ssh_key.pub
